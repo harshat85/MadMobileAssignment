@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create an Auto Scaling Group within AWS Free Tier limits in the Stockholm (eu-north-1) region.
+
+Resources:
+  # Launch Configuration
+  MyAppLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: ami-064c5012ae6debf9b  # this AMI is available in the eu-north-1 region
+      InstanceType: t3.micro  # Free Tier instance type
+      KeyName: ec2key  # <-- Add the KeyName property
+      IamInstanceProfile: !Ref MyAppInstanceProfile
+      SecurityGroups:
+        - sg-09585339288ead35a
+
+  # IAM Instance Profile
+  MyAppInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - myApp_Roll
+
+  # Auto Scaling Group
+  MyAppAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - subnet-0e642b393b88a1507  # Update these with your actual subnet IDs
+        - subnet-0e3c4cca4b69c4039
+      LaunchConfigurationName: !Ref MyAppLaunchConfiguration
+      MinSize: 1  # Set to 1 to stay within Free Tier
+      MaxSize: 4  
+      DesiredCapacity: 1
+      HealthCheckType: EC2
+      HealthCheckGracePeriod: 300
+      MetricsCollection:
+        - Granularity: "1Minute"
+      Tags:
+        - Key: Name
+          Value: MyAppInstance
+          PropagateAtLaunch: true
+
+  # Scaling Policy - Scale Out (Increase Capacity)
+  ScaleOutPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref MyAppAutoScalingGroup
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
+      Cooldown: 300
+      ScalingAdjustment: 1
+
+  # Scaling Policy - Scale In (Decrease Capacity)
+  ScaleInPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref MyAppAutoScalingGroup
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
+      Cooldown: 300
+      ScalingAdjustment: -1
+
+  # CloudWatch Alarm for Scaling Out
+  CPUUtilizationHigh:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Alarm if CPU Utilization is greater than or equal to 50%"
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref MyAppAutoScalingGroup
+      AlarmActions:
+        - !Ref ScaleOutPolicy
+
+  # CloudWatch Alarm for Scaling In
+  CPUUtilizationLow:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Alarm if CPU Utilization is less than 30%"
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 30
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref MyAppAutoScalingGroup
+      AlarmActions:
+        - !Ref ScaleInPolicy
+
+Outputs:
+  AutoScalingGroupName:
+    Description: "Name of the Auto Scaling Group"
+    Value: !Ref MyAppAutoScalingGroup
