@@ -1,0 +1,15 @@
+/var/log/myapp/*.log {
+    daily                         # Rotate logs daily
+    rotate 7                      # Keep only 7 rotations (one week of logs)
+    compress                      # Compress the rotated logs
+    delaycompress                 # Delay compression to the next rotation cycle
+    missingok                     # Ignore missing files and errors
+    notifempty                    # Do not rotate empty logs
+    dateext                       # Append date to rotated logs
+    dateformat -%Y-%m-%d          # Specify date format in filenames
+    create 0644 root root         # Specify permissions for new log files
+    olddir /var/log/myapp/archive # Archive rotated logs in a separate directory
+    postrotate
+        find /var/log/myapp/archive -mtime +90 -type f -delete  # Delete logs older than 90 days
+    endscript
+}
