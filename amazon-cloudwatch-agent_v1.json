@@ -1,0 +1,62 @@
+{
+  "metrics": {
+    "namespace": "CustomNamespace",
+    "metrics_collected": {
+      "cpu": {
+        "measurement": [
+          "cpu_usage_idle",
+          "cpu_usage_iowait",
+          "cpu_usage_user",
+          "cpu_usage_system"
+        ],
+        "metrics_collection_interval": 60,
+        "totalcpu": true
+      },
+      "mem": {
+        "measurement": [
+          "mem_used_percent",
+          "mem_available_percent"
+        ],
+        "metrics_collection_interval": 60
+      },
+      "netstat": {
+        "measurement": [
+          "tcp_established",
+          "tcp_time_wait",
+          "tcp_close_wait"
+        ],
+        "metrics_collection_interval": 60
+      }
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/cpu_metrics.log",
+            "log_group_name": "CustomNamespace/CPU",
+            "log_stream_name": "{instance_id}",
+            "timestamp_format": "%Y-%m-%d %H:%M:%S",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/memory_metrics.log",
+            "log_group_name": "CustomNamespace/Memory",
+            "log_stream_name": "{instance_id}",
+            "timestamp_format": "%Y-%m-%d %H:%M:%S",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/network_metrics.log",
+            "log_group_name": "CustomNamespace/Network",
+            "log_stream_name": "{instance_id}",
+            "timestamp_format": "%Y-%m-%d %H:%M:%S",
+            "timezone": "UTC"
+          }
+        ]
+      }
+    },
+    "force_flush_interval": 15
+  }
+}
